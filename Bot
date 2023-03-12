@@ -1,0 +1,62 @@
+import telegram
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
+
+# Здесь нужно указать токен вашего бота, который вы получили у BotFather
+TOKEN = '6290721812:AAHgMOzMBLTcYitL4KnZ503qcTovJ6DOGLA'
+
+# Создаем объект бота
+bot = telegram.Bot(token=TOKEN)
+
+# Обработчик команды /start
+def start(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Привет! Чтобы оставить заявку на работу, отправьте ее мне в сообщении.")
+
+# Обработчик текстовых сообщений с заявкой на работу
+def job_application(update, context):
+    job_application = update.message.text
+    # Здесь можно сохранить заявку в базу данных или отправить ее на email
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Спасибо за заявку на работу! Мы свяжемся с вами в ближайшее время.")
+
+# Обработчик команды /jobs и вывод вакансий
+def jobs(update, context):
+    keyboard = [[InlineKeyboardButton("Вакансия 1", callback_data='job1'),
+                 InlineKeyboardButton("Вакансия 2", callback_data='job2')],
+                [InlineKeyboardButton("Вакансия 3", callback_data='job3')]]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    update.message.reply_text('Выберите вакансию:', reply_markup=reply_markup)
+
+# Обработчик нажатия на кнопку с вакансией
+def job_selection(update, context):
+    query = update.callback_query
+
+    if query.data == 'job1':
+        job_description = "Описание вакансии 1"
+    elif query.data == 'job2':
+        job_description = "Описание вакансии 2"
+    else:
+        job_description = "Описание вакансии 3"
+
+    context.bot.edit_message_text(chat_id=query.message.chat_id,
+                                  message_id=query.message.message_id,
+                                  text=job_description)
+
+# Создаем объект Updater и передаем ему токен бота
+updater = Updater(token=TOKEN, use_context=True)
+
+# Получаем диспетчер для регистрации обработчиков
+dispatcher = updater.dispatcher
+
+# Регистрируем обработчики команд и сообщений
+dispatcher.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(CommandHandler("jobs", jobs))
+dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), job_application))
+dispatcher.add_handler(CallbackQueryHandler(job_selection))
+
+# Запускаем бота
+updater.start_polling()
+
+# Запускаем цикл обработки событий
+updater.idle()
